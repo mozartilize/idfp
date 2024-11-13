@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+<head>
+<title>IDFP - Sources</title>
+<style>
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+}
+</style>
+</head>
+
+<body>
+<table>
+    <tr>
+        {% for header in headers %}
+            <th>{{header}}</th>
+        {% endfor %}
+    </tr>
+    {% for row in rows %}
+        <tr>
+            {% for i in row %}
+                <td>{{ i }}</td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+</table>
+</body>
+</html>

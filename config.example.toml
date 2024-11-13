@@ -1,0 +1,7 @@
+[app]
+dbname="idfp"
+dbhost="localhost"
+dbport=5432
+dbuser="idfp"
+dbpassword="dbpassword"
+web_bind=['localhost:6969']

@@ -1,0 +1,21 @@
+[project]
+name = "idfp"
+version = "0.1.0"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "click==8.1.7",
+    "flask==3.0.3",
+    "pydantic==2.9.2",
+    "psycopg2==2.9.10",
+    "toml",
+]
+
+[build-system]
+requires = ["setuptools>=64.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["idfp"]
+
+[project.scripts]
+idfp = "idfp.main:cli"
