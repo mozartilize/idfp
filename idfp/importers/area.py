@@ -111,7 +111,7 @@ def process_area_csv_insert(db_conn: connection, source_id: int):
                 except ValidationError as err:
                     cur2.execute(
                         sql.SQL(
-                            "update {} set processed_at = %s and errors = %s where id = %s"
+                            "update {} set processed_at = %s, errors = %s where id = %s"
                         ).format(sql.Identifier("area_csv")),
                         [int(time.time()), err.json(), row[len(area_csv_fields) - 1]],
                     )

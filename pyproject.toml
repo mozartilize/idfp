@@ -7,7 +7,7 @@ dependencies = [
     "flask==3.0.3",
     "pydantic==2.9.2",
     "psycopg2==2.9.10",
-    "toml",
+    "gunicorn",
 ]
 
 [build-system]

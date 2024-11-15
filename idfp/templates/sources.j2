@@ -18,9 +18,17 @@ table, th, td {
         {% endfor %}
     </tr>
     {% for row in rows %}
-        <tr>
+        <tr class="{{ loop.cycle('odd', 'even') }}"></tr>
             {% for i in row %}
-                <td>{{ i }}</td>
+                {% if loop.last %}
+                    {% if i %}
+                        <td><a href="/csv-errors/download?source_id={{row[0]}}">Download</a></td>
+                    {% else %}
+                        <td></td>
+                    {% endif %}
+                {% else %}
+                    <td>{{ i }}</td>
+                {% endif %}
             {% endfor %}
         </tr>
     {% endfor %}

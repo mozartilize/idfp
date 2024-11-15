@@ -11,3 +11,13 @@ def get_db_conn(config: AppConfiguration):
         host=config.dbhost,
         port=config.dbport,
     )
+
+
+def get_db_reader_conn(config: AppConfiguration):
+    return psycopg2.connect(
+        database=config.dbname,
+        user=config.dbreaderuser,
+        password=config.dbreaderpassword,
+        host=config.dbhost,
+        port=config.dbport,
+    )

@@ -12,15 +12,14 @@ logger.addHandler(logging.StreamHandler())
 
 
 @click.group()
-@click.option("--config", "-c", "config_fp", required=True, type=str)
+@click.option("--config", "-c", "config_fo", required=True, type=click.File('rb'))
 @click.pass_context
-def cli(ctx: click.Context, config_fp: str):
+def cli(ctx: click.Context, config_fo: t.BinaryIO):
     # ensure that ctx.obj exists and is a dict (in case `cli()` is called
     # by means other than the `if` block below)
     ctx.ensure_object(dict)
-    with open(config_fp) as config_fo:
-        logger.info(f"Loading configuration from {config_fp}")
-        config = configure(config_fo)
+    logger.info(f"Loading configuration from {config_fo.name}")
+    config = configure(config_fo)
     ctx.obj['config'] = config
 
 
@@ -90,6 +89,10 @@ def web(ctx: click.Context):
 
     gunicorn_cfg = importlib.import_module("idfp.web.gunicorn")
     gunicorn_cfg.bind = config.web_bind
+    gunicorn_cfg.preload_app = config.web_preload
+    if config.web_workers:
+        gunicorn_cfg.workers = config.web_workers
+    gunicorn_cfg.reuse_port = config.web_reuse_port
 
     # save and restore `sys.argv` to make USR2 handling work
     old_sys_argv = sys.argv[:]

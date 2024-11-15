@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>IDFP - Sources</title>
+    <style>
+        table,
+        th,
+        td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+    </style>
+</head>
+
+<body>
+<form method="post">
+<div>
+<textarea placeholder="Input your SQL" cols="100" rows="5" name="sql" required>{% if sql %}{{sql}}{% endif %}</textarea>
+</div>
+<div>
+<input type="submit" value="Submit">
+</div>
+</form>
+
+{% if error %}
+<p>{{error}}</p>
+{% endif %}
+
+<table>
+    <tr>
+        {% for header in headers %}
+            <th>{{header}}</th>
+        {% endfor %}
+    </tr>
+    {% for row in rows %}
+        <tr class="{{ loop.cycle('odd', 'even') }}"></tr>
+        {% for i in row %}
+            <td>{{ i }}</td>
+        {% endfor %}
+        </tr>
+    {% endfor %}
+</table>
+
+</body>
+</html>

@@ -1,4 +1,6 @@
 import csv
+import itertools
+import logging
 import json
 import time
 import typing as t
@@ -8,9 +10,10 @@ from datetime import datetime, timezone
 from psycopg2 import sql
 from psycopg2._psycopg import connection
 
-from idfp.models import Area
 from idfp.definitions import Type, DATA_MAPPING, Source, CSV_ID_FIELD
 from pydantic import ValidationError
+
+logger = logging.getLogger(__name__)
 
 
 def import_csv(
@@ -84,6 +87,7 @@ def import_csv(
             )
             db_conn.commit()
         raise exc
+    logger.info("Done import csv")
     return source_id
 
 
@@ -91,7 +95,10 @@ def process_csv_insert(db_conn: connection, source: Source):
     model = DATA_MAPPING[source.type].model
     csv_table_name = DATA_MAPPING[source.type].csv_table
 
-    fields = [f.lower() for f in model.model_fields.keys()]
+    model_fields = list(model.model_fields.keys())
+    fields = [f.lower() for f in model_fields]
+    fields_without_primary_key = fields[:]
+    fields_without_primary_key.remove(DATA_MAPPING[source.type].primary_key)
     csv_fields = [*fields, CSV_ID_FIELD]
     csv_fields_select = ", ".join(csv_fields)
     get_insert_sql = sql.SQL(
@@ -107,17 +114,15 @@ def process_csv_insert(db_conn: connection, source: Source):
                 break
             for row in rows:
                 csv_row_ids.append(row[len(csv_fields) - 1])
-                fields_values = {
-                    f: row[i] for (i, f) in enumerate(Area.model_fields.keys())
-                }
+                fields_values = {f: row[i] for (i, f) in enumerate(model_fields)}
                 try:
-                    _ = Area(**fields_values)
+                    _ = model(**fields_values)
                     # TODO: check if ExternalIdentifier exists
                     insert_data.append(list(fields_values.values()))
                 except ValidationError as err:
                     cur2.execute(
                         sql.SQL(
-                            "update {} set processed_at = %s and errors = %s where id = %s"
+                            "update {} set processed_at = %s, errors = %s where id = %s"
                         ).format(sql.Identifier(csv_table_name)),
                         [int(time.time()), err.json(), row[len(csv_fields) - 1]],
                     )
@@ -131,10 +136,21 @@ def process_csv_insert(db_conn: connection, source: Source):
                     )
 
             values_placeholder = ", ".join(["%s"] * len(fields))
+            set_on_conflict_sql = ", ".join(["{} = EXCLUDED.{}" for _ in fields_without_primary_key])
+
             cur2.executemany(
                 sql.SQL(
-                    f"insert into {{}}({', '.join(fields)}) values({values_placeholder})"
-                ).format(sql.Identifier("areas")),
+                    f"insert into {{}}({', '.join(fields)}) values({values_placeholder}) on conflict ({{}}) do update set {set_on_conflict_sql}"
+                ).format(
+                    sql.Identifier(DATA_MAPPING[source.type].table),
+                    sql.Identifier(DATA_MAPPING[source.type].primary_key),
+                    *(
+                        sql.Identifier(f)
+                        for f in itertools.chain.from_iterable(
+                            (f, f) for f in fields_without_primary_key
+                        )
+                    ),
+                ),
                 insert_data,
             )
             cur2.execute(
@@ -144,6 +160,7 @@ def process_csv_insert(db_conn: connection, source: Source):
                 [int(time.time()), tuple(csv_row_ids)],
             )
             db_conn.commit()
+    logger.info("Done process insert csv")
 
 
 def process_csv_delete(db_conn: connection, source: Source):
@@ -196,6 +213,7 @@ def process_csv_delete(db_conn: connection, source: Source):
                     [int(time.time()), tuple(csv_row_ids)],
                 )
             db_conn.commit()
+    logger.info("Done process delete csv")
 
 
 def process_csv(db_conn: connection, source: Source):
